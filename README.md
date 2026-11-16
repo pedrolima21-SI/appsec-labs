@@ -1,50 +1,30 @@
 # AppSec Labs
 
-Repositório de estudos sobre segurança de aplicações, com exercícios de revisão e práticas defensivas em código próprio, ambientes locais ou laboratórios autorizados.
+Repositório de estudos sobre segurança de aplicações, com exercícios defensivos em cenários fictícios, código próprio e ambientes explicitamente autorizados.
 
-> **Status:** Em desenvolvimento. Todo exercício deve ter escopo explícito e usar dados fictícios. Não teste sistemas de terceiros sem autorização.
+> **Status:** Em desenvolvimento. Os materiais são educacionais. Nenhum exercício autoriza testar sistemas de terceiros sem permissão explícita.
 
-## Objetivos
+## Primeiro material: controle de acesso
 
-- Aprender fundamentos de segurança de aplicações com foco em prevenção e correção.
-- Praticar revisão de código e modelagem de ameaças em exemplos didáticos.
-- Documentar evidências, limitações e recomendações de forma clara.
-- Evoluir de conceitos para pequenas aplicações locais e seguras.
+O laboratório [`01 — Revisão de controle de acesso`](labs/01-access-control-review/) propõe uma matriz de permissões para uma aplicação fictícia de relatórios. É um exercício de especificação documental: **não inclui aplicação executável nem afirma que testes técnicos foram realizados**.
 
-## Roteiro de conteúdo
+- [Matriz de acesso preenchida](labs/01-access-control-review/access-matrix.md)
+- [Plano de casos de teste esperados](labs/01-access-control-review/test-plan.md)
+- [Conclusões e limitações](labs/01-access-control-review/notes.md)
 
-O plano progressivo está em [`ROADMAP.md`](ROADMAP.md). Os primeiros módulos cobrem:
+## Outros materiais
 
-1. Autenticação, autorização e controle de acesso.
-2. Validação de entrada e tratamento seguro de erros.
-3. Sessões, cookies e proteção de dados.
-4. Modelagem de ameaças e documentação de correções.
+- [Metodologia de estudo](docs/methodology.md)
+- [Checklist de revisão web](notes/web-security-checklist.md)
+- [Roadmap de estudos](ROADMAP.md)
 
-## Estrutura
+## Princípios
 
-```text
-.
-├── docs/       # Metodologia e guias
-├── labs/       # Exercícios didáticos e revisões defensivas
-├── notes/      # Checklists e anotações
-├── ROADMAP.md
-└── README.md
-```
-
-## Começando
-
-1. Leia [`docs/methodology.md`](docs/methodology.md).
-2. Escolha um exercício listado em [`labs/README.md`](labs/README.md).
-3. Use apenas um projeto local, dados sintéticos ou um ambiente autorizado.
-4. Registre o comportamento observado, a correção proposta e as limitações.
-
-## Princípios de uso responsável
-
-- Respeitar o escopo e a autorização do ambiente.
-- Preferir revisão preventiva e validação em aplicações locais.
-- Não publicar informações sensíveis, credenciais ou dados pessoais.
-- Separar observações verificadas de hipóteses.
-- Explicar limitações e priorizar recomendações corretivas.
+- Respeitar escopo e autorização explícita.
+- Preferir revisão preventiva e ambientes locais.
+- Utilizar dados fictícios e sanitizados.
+- Diferenciar fatos observados, hipóteses e resultados esperados.
+- Não publicar credenciais, segredos ou dados pessoais.
 
 ## Licença
 
