@@ -25,14 +25,27 @@ class Resource:
     published: bool = False
 
 
-def allow_access(user: User, action: str, resource: Resource) -> bool:
-    """Apply a small fictional authorization policy.
+ALLOWED_ADMIN_ACTIONS = {
+    "view_report",
+    "create_draft",
+    "edit_draft",
+    "publish_report",
+    "manage_roles",
+    "alter_config",
+}
 
-    The rules are intentionally conservative and are meant for study rather than
-    production use.
+
+def allow_access(user: User, action: str, resource: Resource) -> bool:
+    """Apply a conservative access-control policy for a fictional app.
+
+    The rules are intentionally explicit: unknown roles and actions default to
+    denial. Administrators are allowed only for actions defined in the lab.
     """
+    if user.role not in {"reader", "editor", "administrator"}:
+        return False
+
     if user.role == "administrator":
-        return True
+        return action in ALLOWED_ADMIN_ACTIONS
 
     if user.role == "editor":
         if action == "view_report" and resource.published:
@@ -53,9 +66,9 @@ def allow_access(user: User, action: str, resource: Resource) -> bool:
     return False
 
 
-def run_scenarios() -> Iterable[tuple[str, bool]]:
+def run_scenarios() -> list[tuple[str, bool, bool]]:
     """Return a representative set of allowed/denied checks."""
-    scenarios = [
+    scenarios: list[tuple[str, bool, bool]] = [
         (
             "reader can view a published report",
             allow_access(
@@ -73,6 +86,15 @@ def run_scenarios() -> Iterable[tuple[str, bool]]:
                 Resource("report", "Quarterly Summary", published=True),
             ),
             False,
+        ),
+        (
+            "editor can create a draft",
+            allow_access(
+                User("bob", "editor"),
+                "create_draft",
+                Resource("report", "Quarterly Summary", published=True),
+            ),
+            True,
         ),
         (
             "editor can edit own draft",
@@ -93,6 +115,15 @@ def run_scenarios() -> Iterable[tuple[str, bool]]:
             False,
         ),
         (
+            "editor cannot publish a report",
+            allow_access(
+                User("bob", "editor"),
+                "publish_report",
+                Resource("report", "Quarterly Summary", published=False),
+            ),
+            False,
+        ),
+        (
             "administrator can manage roles",
             allow_access(
                 User("admin", "administrator"),
@@ -101,18 +132,63 @@ def run_scenarios() -> Iterable[tuple[str, bool]]:
             ),
             True,
         ),
+        (
+            "administrator can alter config",
+            allow_access(
+                User("admin", "administrator"),
+                "alter_config",
+                Resource("config", "Application configuration"),
+            ),
+            True,
+        ),
+        (
+            "administrator cannot perform unknown action",
+            allow_access(
+                User("admin", "administrator"),
+                "delete_everything",
+                Resource("config", "Application configuration"),
+            ),
+            False,
+        ),
+        (
+            "unknown role is denied by default",
+            allow_access(
+                User("ghost", "guest"),
+                "view_report",
+                Resource("report", "Quarterly Summary", published=True),
+            ),
+            False,
+        ),
+        (
+            "unknown action is denied by default",
+            allow_access(
+                User("alice", "reader"),
+                "read_private_data",
+                Resource("report", "Quarterly Summary", published=True),
+            ),
+            False,
+        ),
     ]
     return scenarios
 
 
 def main() -> int:
-    """Print a simple scenario matrix for the fictional lab."""
+    """Print scenario results and exit non-zero on mismatch."""
     print("Access control simulation for the fictional reporting app")
-    print("Scenario | Expected result | Outcome")
-    for name, result, expected in run_scenarios():
-        status = "ALLOW" if result else "DENY"
-        outcome = "PASS" if result == expected else "FAIL"
-        print(f"{name} | {expected} | {status} ({outcome})")
+    print("Scenario | Expected | Outcome")
+    failed = 0
+
+    for name, actual, expected in run_scenarios():
+        outcome = "PASS" if actual == expected else "FAIL"
+        if outcome == "FAIL":
+            failed += 1
+        print(f"{name} | {expected} | {actual} ({outcome})")
+
+    if failed:
+        print(f"\nFAIL: {failed} scenario(s) did not match expected behavior.")
+        return 1
+
+    print("\nPASS: all access-control scenarios matched the expected policy.")
     return 0
 
 
