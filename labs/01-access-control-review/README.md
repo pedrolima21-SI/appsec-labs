@@ -6,7 +6,7 @@ Praticar a definição e revisão de regras de acesso em uma aplicação fictíc
 
 ## Escopo e método
 
-Exercício de especificação documental. Não há aplicação implementada, serviço externo, conta real ou teste técnico executado. A matriz e os casos de teste são propostas para discussão e precisam ser adaptados e aprovados antes de orientar um sistema real.
+Exercício de especificação documental, agora complementado por uma demonstração local em Python. Não há aplicação real, serviço externo, conta real ou teste técnico executado. A matriz, o plano de teste e o simulador são propostas para discussão e precisam ser adaptados e aprovados antes de orientar um sistema real.
 
 ## Cenário fictício
 
@@ -17,8 +17,17 @@ Uma aplicação interna permite consultar relatórios publicados, criar e editar
 1. [Matriz de acesso](access-matrix.md) preenchida com uma proposta conservadora.
 2. [Plano de casos de teste](test-plan.md) para validação futura em uma aplicação local.
 3. [Registro de estudo](notes.md) com conclusão, decisões pendentes e limitações.
+4. [Simulador local](access_control_demo.py) para demonstrar decisões de autorização em Python.
 
-## Princ��pios da proposta
+## Como executar o simulador
+
+```bash
+python access_control_demo.py
+```
+
+A saída mostra resultados esperados para cenários permitidos e negados, utilizando apenas dados fictícios.
+
+## Princípios da proposta
 
 - Negar ações protegidas quando não houver regra ou papel reconhecido.
 - Validar a autorização no servidor em cada operação; controles de interface não substituem autorização.
@@ -33,6 +42,6 @@ A proposta separa consulta, edição e administração; limita a edição de ras
 ## Limitações e próximos passos
 
 - Cenário e permissões inteiramente fictícios.
-- Não há código de aplicação, execução de testes ou evidência de vulnerabilidade.
+- Não há aplicação real, execução de teste em ambiente externo ou evidência de vulnerabilidade.
 - Confirmar as decisões de negócio antes de qualquer implementação real.
-- Se o estudo evoluir para código, criar uma aplicação didática local e implementar testes automatizados para os casos permitidos e negados.
+- Se o estudo evoluir para código, criar uma aplicação didática local e validar os casos do simulador com testes automatizados.

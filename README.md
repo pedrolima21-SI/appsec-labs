@@ -6,19 +6,22 @@ Repositório de estudos sobre segurança de aplicações, com exercícios defens
 
 ## Primeiro material: controle de acesso
 
-O laboratório [`01 — Revisão de controle de acesso`](labs/01-access-control-review/) propõe uma matriz de permissões para uma aplicação fictícia de relatórios. É um exercício de especificação documental: **não inclui aplicação executável nem afirma que testes técnicos foram realizados**.
+O laboratório [`01 — Revisão de controle de acesso`](labs/01-access-control-review/) propõe uma matriz de permissões para uma aplicação fictícia de relatórios e, nesta etapa, também inclui uma demonstração local e reproduzível das regras de autorização.
 
 - [Matriz de acesso preenchida](labs/01-access-control-review/access-matrix.md)
-- [Plano de casos de teste esperados](labs/01-access-control-review/test-plan.md)
+- [Plano de casos de teste](labs/01-access-control-review/test-plan.md)
 - [Conclusões e limitações](labs/01-access-control-review/notes.md)
+- [Demonstração local de autorização](labs/01-access-control-review/access_control_demo.py)
 
-## Outros materiais
+## Como executar a demonstração local
 
-- [Metodologia de estudo](docs/methodology.md)
-- [Checklist de revisão web](notes/web-security-checklist.md)
-- [Roadmap de estudos](ROADMAP.md)
+```bash
+python labs/01-access-control-review/access_control_demo.py
+```
 
-## Princípios
+A execução imprime os resultados esperados para cenários permitidos e negados, servindo como base didática para revisão de autorização e menor privilégio.
+
+## Principios
 
 - Respeitar escopo e autorização explícita.
 - Preferir revisão preventiva e ambientes locais.
