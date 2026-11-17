@@ -1,25 +1,22 @@
-from __future__ import annotations
+services:
+  secure-api:
+    build: .
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET before starting}
+      APP_DB_PATH: /tmp/api_security_lab_secure.db
+      VULNERABLE_MODE: "false"
 
-from fastapi.testclient import TestClient
-
-from tests.conftest import auth, login
-
-
-def test_vulnerable_mode_allows_cross_owner_read(vulnerable_client: TestClient):
-    headers = auth(login(vulnerable_client, "alice", "alice12345"))
-    response = vulnerable_client.get("/api/reports/2", headers=headers)
-    assert response.status_code == 200
-    assert response.json()["owner_id"] == 2
-
-
-def test_vulnerable_mode_allows_cross_owner_edit(vulnerable_client: TestClient):
-    headers = auth(login(vulnerable_client, "alice", "alice12345"))
-    response = vulnerable_client.patch("/api/reports/2", headers=headers, json={"content": "tampered-by-alice"})
-    assert response.status_code == 200
-    assert response.json()["content"] == "tampered-by-alice"
-
-
-def test_secure_mode_blocks_same_cross_owner_access(secure_client: TestClient):
-    headers = auth(login(secure_client, "alice", "alice12345"))
-    response = secure_client.get("/api/reports/2", headers=headers)
-    assert response.status_code == 404
+  vulnerable-api:
+    build: .
+    profiles:
+      - vulnerable-lab
+    command: ["uvicorn", "app.vulnerable:app", "--host", "0.0.0.0", "--port", "8001"]
+    ports:
+      - "127.0.0.1:8001:8001"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET before starting}
+      APP_DB_PATH: /tmp/api_security_lab_vulnerable.db
+      VULNERABLE_MODE: "true"
