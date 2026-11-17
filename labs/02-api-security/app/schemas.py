@@ -1,37 +1,45 @@
 from __future__ import annotations
 
-from app.models import Report, User
-
-VALID_ROLES = frozenset({"reader", "editor", "administrator"})
+from pydantic import BaseModel, ConfigDict, Field
 
 
-def is_known_user(user: User | None) -> bool:
-    return user is not None and user.active and user.role in VALID_ROLES
+class StrictModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
 
-def can_read_report(user: User, report: Report) -> bool:
-    if not is_known_user(user):
-        return False
-    if user.role == "administrator":
-        return True
-    if report.status == "published":
-        return report.scope_id == user.scope_id
-    return report.owner_id == user.id and report.scope_id == user.scope_id
+class UserRegister(StrictModel):
+    username: str = Field(..., min_length=3, max_length=80, pattern=r"^[A-Za-z0-9_.-]+$")
+    password: str = Field(..., min_length=12, max_length=128)
 
 
-def can_create_report(user: User) -> bool:
-    return is_known_user(user) and user.role in {"editor", "administrator"}
+class UserLogin(StrictModel):
+    username: str = Field(..., min_length=1, max_length=80)
+    password: str = Field(..., min_length=1, max_length=128)
 
 
-def can_edit_report(user: User, report: Report) -> bool:
-    if not is_known_user(user):
-        return False
-    if user.role == "administrator":
-        return True
-    return report.owner_id == user.id and report.scope_id == user.scope_id and report.status == "draft"
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user_id: int | None = None
+    username: str | None = None
+    role: str | None = None
+    expires_in: int = 8 * 60 * 60
 
 
-def can_publish_report(user: User, report: Report) -> bool:
-    if not is_known_user(user):
-        return False
-    return user.role == "administrator" and report.status == "draft"
+class ReportCreate(StrictModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    content: str = Field(..., min_length=1, max_length=20000)
+
+
+class ReportUpdate(StrictModel):
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    content: str | None = Field(default=None, min_length=1, max_length=20000)
+
+
+class ReportRead(BaseModel):
+    id: int
+    title: str
+    content: str
+    status: str
+    scope_id: str
+    owner_id: int
