@@ -1,36 +1,29 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from pathlib import Path
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-from app.database import Base
+from app.config import DATABASE_URL
 
-
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(80), unique=True, nullable=False, index=True)
-    password_hash = Column(String(255), nullable=False)
-    role = Column(String(40), nullable=False)
-    scope_id = Column(String(80), nullable=True)
-    active = Column(Boolean, default=True)
-
-    reports = relationship("Report", back_populates="owner")
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
 
-class Report(Base):
-    __tablename__ = "reports"
+def init_db() -> None:
+    from app.models import Report, User
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(200), nullable=False)
-    content = Column(Text, nullable=False)
-    status = Column(String(40), nullable=False, default="draft")
-    scope_id = Column(String(80), nullable=False, default="team-a")
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    if DATABASE_URL.startswith("sqlite://"):
+        db_path = DATABASE_URL.removeprefix("sqlite:///")
+        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+    Base.metadata.create_all(bind=engine)
 
-    owner = relationship("User", back_populates="reports")
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

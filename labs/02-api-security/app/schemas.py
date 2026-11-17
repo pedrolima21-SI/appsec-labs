@@ -1,48 +1,37 @@
 from __future__ import annotations
 
-from typing import Optional
+from app.models import Report, User
 
-from pydantic import BaseModel, Field
-
-
-class UserRegister(BaseModel):
-    username: str = Field(..., min_length=3, max_length=80)
-    password: str = Field(..., min_length=8, max_length=255)
-    role: str = Field(default="reader", pattern="^(reader|editor|administrator)$")
-    scope_id: str = Field(default="team-a", min_length=1, max_length=80)
+VALID_ROLES = frozenset({"reader", "editor", "administrator"})
 
 
-class UserLogin(BaseModel):
-    username: str = Field(..., min_length=1, max_length=80)
-    password: str = Field(..., min_length=1, max_length=255)
+def is_known_user(user: User | None) -> bool:
+    return user is not None and user.active and user.role in VALID_ROLES
 
 
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    user_id: int
-    username: str
-    role: str
+def can_read_report(user: User, report: Report) -> bool:
+    if not is_known_user(user):
+        return False
+    if user.role == "administrator":
+        return True
+    if report.status == "published":
+        return report.scope_id == user.scope_id
+    return report.owner_id == user.id and report.scope_id == user.scope_id
 
 
-class ReportCreate(BaseModel):
-    title: str = Field(..., min_length=1, max_length=200)
-    content: str = Field(..., min_length=1)
-    scope_id: str = Field(default="team-a", min_length=1, max_length=80)
-    status: str = Field(default="draft", pattern="^(draft|published)$")
+def can_create_report(user: User) -> bool:
+    return is_known_user(user) and user.role in {"editor", "administrator"}
 
 
-class ReportUpdate(BaseModel):
-    title: Optional[str] = None
-    content: Optional[str] = None
-    status: Optional[str] = None
-    scope_id: Optional[str] = None
+def can_edit_report(user: User, report: Report) -> bool:
+    if not is_known_user(user):
+        return False
+    if user.role == "administrator":
+        return True
+    return report.owner_id == user.id and report.scope_id == user.scope_id and report.status == "draft"
 
 
-class ReportRead(BaseModel):
-    id: int
-    title: str
-    content: str
-    status: str
-    scope_id: str
-    owner_id: int
+def can_publish_report(user: User, report: Report) -> bool:
+    if not is_known_user(user):
+        return False
+    return user.role == "administrator" and report.status == "draft"
