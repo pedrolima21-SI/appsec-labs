@@ -1,72 +1,34 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from typing import Annotated, Any
+from pathlib import Path
+from typing import Generator
 
-import jwt
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from passlib.context import CryptContext
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-from app.config import JWT_SECRET
-from app.database import get_db
-from app.models import User
+from app.config import DATABASE_URL
 
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
-security = HTTPBearer(auto_error=False)
-VALID_ROLES = frozenset({"reader", "editor", "administrator"})
+_connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+engine = create_engine(DATABASE_URL, connect_args=_connect_args)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
 
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+def init_db() -> None:
+    # Import the model module only after Base exists so its tables register
+    # without creating a database/models import cycle.
+    from app import models  # noqa: F401
+
+    url = make_url(DATABASE_URL)
+    if url.get_backend_name() == "sqlite" and url.database not in (None, ":memory:"):
+        Path(url.database).expanduser().resolve().parent.mkdir(parents=True, exist_ok=True)
+    Base.metadata.create_all(bind=engine)
 
 
-def verify_password(password: str, password_hash: str) -> bool:
+def get_db() -> Generator:
+    db = SessionLocal()
     try:
-        return pwd_context.verify(password, password_hash)
-    except (TypeError, ValueError):
-        return False
-
-
-def require_jwt_secret() -> str:
-    if not JWT_SECRET or len(JWT_SECRET) < 32:
-        raise RuntimeError("JWT_SECRET must be set to a non-empty value with at least 32 characters")
-    return JWT_SECRET
-
-
-def create_access_token(username: str) -> str:
-    now = datetime.now(timezone.utc)
-    payload = {
-        "sub": username,
-        "iat": now.isoformat(),
-        "exp": (now + timedelta(hours=8)).timestamp(),
-    }
-    return jwt.encode(payload, require_jwt_secret(), algorithm="HS256")
-
-
-def decode_access_token(token: str) -> dict[str, Any]:
-    try:
-        return jwt.decode(token, require_jwt_secret(), algorithms=["HS256"])
-    except (jwt.PyJWTError, RuntimeError) as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token") from exc
-
-
-def get_current_user(
-    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
-    db: Annotated[Session, Depends(get_db)],
-) -> User:
-    if credentials is None or not credentials.credentials:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
-
-    payload = decode_access_token(credentials.credentials)
-    username = payload.get("sub")
-    if not isinstance(username, str) or not username:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
-
-    user = db.scalar(select(User).where(User.username == username))
-    if user is None or not user.active or user.role not in VALID_ROLES:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unknown or inactive user")
-
-    return user
+        yield db
+    finally:
+        db.close()
